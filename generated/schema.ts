@@ -406,8 +406,6 @@ export class Royalty extends Entity {
   constructor(id: string) {
     super();
     this.set("id", Value.fromString(id));
-
-    this.set("account", Value.fromString(""));
   }
 
   save(): void {
@@ -436,13 +434,21 @@ export class Royalty extends Entity {
     this.set("id", Value.fromString(value));
   }
 
-  get account(): string {
+  get account(): string | null {
     let value = this.get("account");
-    return value!.toString();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set account(value: string) {
-    this.set("account", Value.fromString(value));
+  set account(value: string | null) {
+    if (!value) {
+      this.unset("account");
+    } else {
+      this.set("account", Value.fromString(<string>value));
+    }
   }
 
   get amount(): i32 {

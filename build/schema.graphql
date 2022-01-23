@@ -35,8 +35,8 @@ type NftMint @entity {
 
 type Royalty @entity {
   id: ID!
-  account: String!
-  amount: Int!
+  account: String
+  amount: Int
 }
 
 type NftCreateSerie @entity {

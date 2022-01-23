@@ -392,6 +392,10 @@ function handleAction(
                             royalties.save()
                             series.royalties = royalties.id
                           }
+                        } else {
+                          let royalties = new Royalty(`${receiptId}-empty`)
+                          royalties.save()
+                          series.royalties = royalties.id
                         }
                         break
                     }
