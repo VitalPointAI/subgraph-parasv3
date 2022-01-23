@@ -26,5 +26,6 @@ dataSources:
         - NftOnApprove
         - NftTransferPayout
         - NftDecreaseSeriesCopy
+        - NftMintBatch
       receiptHandlers:
         - handler: handleReceipt

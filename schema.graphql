@@ -172,7 +172,7 @@ type NftTransferPayout @entity {
 }
 
 type NftDecreaseSeriesCopy @entity {
-   id: ID!
+  id: ID!
   blockTime: BigInt
   blockHeight: BigInt
   blockHash: String
@@ -190,4 +190,26 @@ type NftDecreaseSeriesCopy @entity {
   token_series_id: Int
   copies: Int
   is_non_mintable: Boolean
+}
+
+type NftMintBatch @entity {
+  id: ID!
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  predecessorId: String
+  receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+  type: String
+  token_series_id: Int
+  token_id: Int
+  sender_id: String
+  receive_id: String
 }

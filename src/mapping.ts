@@ -6,7 +6,8 @@ import { NftMint,
   NftSetSeriesPrice, 
   NftOnApprove,
   NftTransferPayout,
-  NftDecreaseSeriesCopy } from "../generated/schema";
+  NftDecreaseSeriesCopy,
+  NftMintBatch } from "../generated/schema";
 
 export function handleReceipt(receipt: near.ReceiptWithOutcome): void {
   const actions = receipt.receipt.actions;
@@ -281,27 +282,29 @@ function handleAction(
   // change the methodName here to the methodName emitting the log in the contract
   if (functionCall.methodName == "nft_create_series") {
     const receiptId = receipt.id.toBase58()
-    // Maps the JSON formatted log
-    let series = new NftCreateSerie(`${receiptId}`)
-
-    // Standard receipt properties
-    series.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
-    series.blockHeight = BigInt.fromU64(blockHeader.height)
-    series.blockHash = blockHeader.hash.toBase58()
-    series.predecessorId = receipt.predecessorId
-    series.receiverId = receipt.receiverId
-    series.signerId = receipt.signerId
-    series.signerPublicKey = publicKey.bytes.toBase58()
-    series.gasBurned = BigInt.fromU64(outcome.gasBurnt)
-    series.tokensBurned = outcome.tokensBurnt
-    series.outcomeId = outcome.id.toBase58()
-    series.executorId = outcome.executorId
-    series.outcomeBlockHash = outcome.blockHash.toBase58()
-    series.log = outcome.logs[0]
-
-    // Log Parsing
     if(outcome.logs !=null && outcome.logs.length > 0){
-        let parsed = json.fromString(outcome.logs[0])
+      for(let x = 0; x < outcome.logs.length; x++){
+        // Maps the JSON formatted log
+        let series = new NftCreateSerie(`${receiptId}`)
+
+        // Standard receipt properties
+        series.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+        series.blockHeight = BigInt.fromU64(blockHeader.height)
+        series.blockHash = blockHeader.hash.toBase58()
+        series.predecessorId = receipt.predecessorId
+        series.receiverId = receipt.receiverId
+        series.signerId = receipt.signerId
+        series.signerPublicKey = publicKey.bytes.toBase58()
+        series.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+        series.tokensBurned = outcome.tokensBurnt
+        series.outcomeId = outcome.id.toBase58()
+        series.executorId = outcome.executorId
+        series.outcomeBlockHash = outcome.blockHash.toBase58()
+        series.log = outcome.logs[x]
+
+        // Log Parsing
+       
+        let parsed = json.fromString(outcome.logs[x])
         if(parsed.kind == JSONValueKind.OBJECT){
 
           let entry = parsed.toObject()
@@ -397,10 +400,10 @@ function handleAction(
               break
             }
           }
-        series.save()
+          series.save()
+        }
       }
     }
-    
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
   }
@@ -723,6 +726,84 @@ function handleAction(
       }
     }
     
+  } else {
+    log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
+  }
+
+  // change the methodName here to the methodName emitting the log in the contract
+  if (functionCall.methodName == "nft_mint_batch") {
+    const receiptId = receipt.id.toBase58()
+    // Maps the JSON formatted log
+    if(outcome.logs !=null && outcome.logs.length > 0){
+      for(let x = 0; x < outcome.logs.length; x++){
+        let series = new NftMintBatch(`${receiptId}`)
+
+        // Standard receipt properties
+        series.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+        series.blockHeight = BigInt.fromU64(blockHeader.height)
+        series.blockHash = blockHeader.hash.toBase58()
+        series.predecessorId = receipt.predecessorId
+        series.receiverId = receipt.receiverId
+        series.signerId = receipt.signerId
+        series.signerPublicKey = publicKey.bytes.toBase58()
+        series.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+        series.tokensBurned = outcome.tokensBurnt
+        series.outcomeId = outcome.id.toBase58()
+        series.executorId = outcome.executorId
+        series.outcomeBlockHash = outcome.blockHash.toBase58()
+        series.log = outcome.logs[x]
+
+        // Log Parsing
+        
+          
+        let parsed = json.fromString(outcome.logs[x])
+        if(parsed.kind == JSONValueKind.OBJECT){
+
+          let entry = parsed.toObject()
+
+          // types JSON
+          // paras had some non-NEP 171 logs early on
+          for(let i = 0; i < entry.entries.length; i++){
+            let key = entry.entries[i].key.toString()
+            switch (true) {
+              case key == 'type':
+                series.type = entry.entries[i].value.toString()
+                break
+              case key == 'params':
+                if(entry.entries[i].value.kind == JSONValueKind.OBJECT){
+                  let paramObject = entry.entries[i].value.toObject()
+                  for(let m = 0; m < paramObject.entries.length; m++){
+                    let paramKey = paramObject.entries[m].key.toString()
+                    switch (true) {
+                      case paramKey == 'token_id':
+                        let tokenArray = paramObject.entries[m].value.toArray()
+                        let n = 0
+                        while (n < tokenArray.length){
+                          let tokenString = "none"
+                          if(tokenArray[m].toString().length > 0){
+                            tokenString = tokenArray[n].toString()
+                            series.token_series_id = BigInt.fromString(tokenString.split(':')[0]).toI32()
+                            series.token_id = BigInt.fromString(tokenString.split(':')[1]).toI32()
+                          }
+                          n++
+                        }
+                        break
+                      case paramKey == 'sender_id':
+                        series.sender_id = paramObject.entries[m].value.toString()
+                        break
+                      case paramKey == 'receiver_id':
+                        series.receive_id = paramObject.entries[m].value.toString()
+                        break
+                    }
+                  }
+                }
+              break
+            }
+          }
+        }
+        series.save()
+      }
+    }
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
   }
