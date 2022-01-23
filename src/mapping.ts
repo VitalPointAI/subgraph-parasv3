@@ -1,5 +1,12 @@
-import { near, log, json, JSONValueKind } from "@graphprotocol/graph-ts";
-import { Account, Log } from "../generated/schema";
+import { near, log, BigInt, json, JSONValueKind } from "@graphprotocol/graph-ts";
+import { NftMint, 
+  NftCreateSerie, 
+  Royalty, 
+  NftBuy, 
+  NftSetSeriesPrice, 
+  NftOnApprove,
+  NftTransferPayout,
+  NftDecreaseSeriesCopy } from "../generated/schema";
 
 export function handleReceipt(receipt: near.ReceiptWithOutcome): void {
   const actions = receipt.receipt.actions;
@@ -9,8 +16,9 @@ export function handleReceipt(receipt: near.ReceiptWithOutcome): void {
       actions[i], 
       receipt.receipt, 
       receipt.block.header,
-      receipt.outcome
-      );
+      receipt.outcome,
+      receipt.receipt.signerPublicKey
+      )
   }
 }
 
@@ -18,95 +26,197 @@ function handleAction(
   action: near.ActionValue,
   receipt: near.ActionReceipt,
   blockHeader: near.BlockHeader,
-  outcome: near.ExecutionOutcome
+  outcome: near.ExecutionOutcome,
+  publicKey: near.PublicKey
 ): void {
   
   if (action.kind != near.ActionKind.FUNCTION_CALL) {
-    log.info("Early return: {}", ["Not a function call"]);
-    return;
+    log.info("Early return: {}", ["Not a function call"])
+    return
   }
   
-  let accounts = new Account(receipt.signerId);
   const functionCall = action.toFunctionCall();
-
+  
   // change the methodName here to the methodName emitting the log in the contract
-  if (functionCall.methodName == "putDID") {
-    const receiptId = receipt.id.toHexString();
-      accounts.signerId = receipt.signerId;
-
+  if (functionCall.methodName == "nft_buy") {
+      const receiptId = receipt.id.toBase58()
       // Maps the JSON formatted log to the LOG entity
-      let logs = new Log(`${receiptId}`);
-      if(outcome.logs[0]!=null){
-        logs.id = receipt.signerId;
-        
-        let parsed = json.fromString(outcome.logs[0])
-        if(parsed.kind == JSONValueKind.OBJECT){
+      let mints = new NftMint(`${receiptId}`)
 
-          let entry = parsed.toObject()
+      // Standard receipt properties
+      mints.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+      mints.blockHeight = BigInt.fromU64(blockHeader.height)
+      mints.blockHash = blockHeader.hash.toBase58()
+      mints.predecessorId = receipt.predecessorId
+      mints.receiverId = receipt.receiverId
+      mints.signerId = receipt.signerId
+      mints.signerPublicKey = publicKey.bytes.toBase58()
+      mints.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+      mints.tokensBurned = outcome.tokensBurnt
+      mints.outcomeId = outcome.id.toBase58()
+      mints.executorId = outcome.executorId
+      mints.outcomeBlockHash = outcome.blockHash.toBase58()
 
-          //EVENT_JSON
-          let eventJSON = entry.entries[0].value.toObject()
+      // Log Parsing
+      if(outcome.logs !=null && outcome.logs.length > 0){
+     
+        if(outcome.logs[0].split(':')[0] == 'EVENT_JSON'){
 
-          //standard, version, event (these stay the same for a NEP 171 emmitted log)
-          for(let i = 0; i < eventJSON.entries.length; i++){
-            let key = eventJSON.entries[i].key.toString()
-            switch (true) {
-              case key == 'standard':
-                logs.standard = eventJSON.entries[i].value.toString()
-                break
-              case key == 'event':
-                logs.event = eventJSON.entries[i].value.toString()
-                break
-              case key == 'version':
-                logs.version = eventJSON.entries[i].value.toString()
-                break
+          // this part is required to turn the paras contract EVENT_JSON into valid JSON
+          let delimiter = ':'
+          let parts = outcome.logs[0].split(delimiter)
+          parts[0] = '"EVENT_JSON"'
+          let newString = parts.join(delimiter)
+          let formatString = '{'+newString+'}'
+          let parsed = json.fromString(formatString)
+
+          
+          if(parsed.kind == JSONValueKind.OBJECT){
+            let entry = parsed.toObject()
+
+            //EVENT_JSON
+            let eventJSON = entry.entries[0].value.toObject()
+
+            //standard, version, event (these stay the same for a NEP 171 emmitted log)
+            for(let i = 0; i < eventJSON.entries.length; i++){
+              let key = eventJSON.entries[i].key.toString()
+              switch (true) {
+                case key == 'standard':
+                  mints.standard = eventJSON.entries[i].value.toString()
+                  break
+                case key == 'event':
+                  mints.event = eventJSON.entries[i].value.toString()
+                  break
+                case key == 'version':
+                  mints.version = eventJSON.entries[i].value.toString()
+                  break
+                case key == 'data':
+                  let j = 0
+                  let dataArray = eventJSON.entries[i].value.toArray()
+                  while(j < dataArray.length){
+                    let dataObject = dataArray[j].toObject()
+                    for(let k = 0; k < dataObject.entries.length; k++){
+                      let key = dataObject.entries[k].key.toString()
+                      switch (true) {
+                        case key == 'owner_id':
+                          mints.owner_id = dataObject.entries[k].value.toString()
+                          break
+                        case key == 'token_ids':
+                          let tokenArray = dataObject.entries[k].value.toArray()
+                          let m = 0
+                          while (m < tokenArray.length){
+                            let tokenString = "none"
+                            if(tokenArray[m].toString().length > 0){
+                              tokenString = tokenArray[m].toString()
+                              mints.token_series_id = BigInt.fromString(tokenString.split(':')[0]).toI32()
+                              mints.token_id = BigInt.fromString(tokenString.split(':')[1]).toI32()
+                            }
+                            m++
+                          }
+                          break
+                      }
+                    }
+                    j++
+                  }
+                  break
+              }
             }
           }
-
-          //data
-          let data = eventJSON.entries[0].value.toObject()
-          for(let i = 0; i < data.entries.length; i++){
-            let key = data.entries[i].key.toString()
-            // Replace each key with the key of the data your are emitting,
-            // Ensure you add the keys to the Log entity and that the types are correct
-            switch (true) {
-              case key == 'accountId':
-                logs.accountId = data.entries[i].value.toString()
-                break
-              case key == 'did':
-                logs.did = data.entries[i].value.toString()
-                break
-              case key == 'registered':
-                logs.registered = data.entries[i].value.toBigInt()
-                break
-              case key == 'owner':
-                logs.owner = data.entries[i].value.toString()
-                break
-            }
-          }
-
+          mints.save()
         }
-        logs.save()
-      }
+        if(outcome.logs[0].split(':')[0] == '{"type"'){
+          let parsed = json.fromString(outcome.logs[0])
+          if(parsed.kind == JSONValueKind.OBJECT){
 
-      accounts.log.push(logs.id);
+            let entry = parsed.toObject()
+
+            
+            // Standard receipt properties
+            mints.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+            mints.blockHeight = BigInt.fromU64(blockHeader.height)
+            mints.blockHash = blockHeader.hash.toBase58()
+            mints.predecessorId = receipt.predecessorId
+            mints.receiverId = receipt.receiverId
+            mints.signerId = receipt.signerId
+            mints.signerPublicKey = publicKey.bytes.toBase58()
+            mints.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+            mints.tokensBurned = outcome.tokensBurnt
+            mints.outcomeId = outcome.id.toBase58()
+            mints.executorId = outcome.executorId
+            mints.outcomeBlockHash = outcome.blockHash.toBase58()
+
+            // types JSON
+            // paras had some non-NEP 171 logs early on
+            for(let i = 0; i < entry.entries.length; i++){
+              let key = entry.entries[i].key.toString()
+              switch (true) {
+                case key == 'type':
+                  mints.type = entry.entries[i].value.toString()
+                  break
+                case key == 'params':
+                  let paramObject = entry.entries[i].value.toObject()
+                  for(let m = 0; m < paramObject.entries.length; m++){
+                    let key = paramObject.entries[m].key.toString()
+                    switch (true) {
+                      case key == 'token_id':
+                        let tokenString = paramObject.entries[m].value.toString()
+                        mints.token_series_id = BigInt.fromString(tokenString.split(':')[0]).toI32()
+                        mints.token_id = BigInt.fromString(tokenString.split(':')[1]).toI32()
+                        break
+                      case key == 'sender_id':
+                        mints.sender_id = paramObject.entries[m].value.toString()
+                        break
+                      case key == 'receiver_id':
+                        mints.receive_id = paramObject.entries[m].value.toString()
+                        break
+                    }
+                  }
+              }
+            }
+          }
+          mints.save()
+        }
+      }
       
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
   }
 
   // change the methodName here to the methodName emitting the log in the contract
-  if (functionCall.methodName == "init") {
-      const receiptId = receipt.id.toHexString();
-      accounts.signerId = receipt.signerId;
+  if (functionCall.methodName == "nft_mint") {
+    const receiptId = receipt.id.toBase58()
+    // Maps the JSON formatted log to the LOG entity
+    let mints = new NftBuy(`${receiptId}`)
 
-      let logs = new Log(`${receiptId}`);
-      if(outcome.logs[0]!=null){
-        logs.id = receipt.signerId;
+    // Standard receipt properties
+    mints.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+    mints.blockHeight = BigInt.fromU64(blockHeader.height)
+    mints.blockHash = blockHeader.hash.toBase58()
+    mints.predecessorId = receipt.predecessorId
+    mints.receiverId = receipt.receiverId
+    mints.signerId = receipt.signerId
+    mints.signerPublicKey = publicKey.bytes.toBase58()
+    mints.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+    mints.tokensBurned = outcome.tokensBurnt
+    mints.outcomeId = outcome.id.toBase58()
+    mints.executorId = outcome.executorId
+    mints.outcomeBlockHash = outcome.blockHash.toBase58()
+
+    // Log Parsing
+    if(outcome.logs !=null && outcome.logs.length > 0){
+   
+      if(outcome.logs[0].split(':')[0] == 'EVENT_JSON'){
+
+        // this part is required to turn the paras contract EVENT_JSON into valid JSON
+        let delimiter = ':'
+        let parts = outcome.logs[0].split(delimiter)
+        parts[0] = '"EVENT_JSON"'
+        let newString = parts.join(delimiter)
+        let formatString = '{'+newString+'}'
+        let parsed = json.fromString(formatString)
+
         
-        let parsed = json.fromString(outcome.logs[0])
         if(parsed.kind == JSONValueKind.OBJECT){
-
           let entry = parsed.toObject()
 
           //EVENT_JSON
@@ -117,44 +227,503 @@ function handleAction(
             let key = eventJSON.entries[i].key.toString()
             switch (true) {
               case key == 'standard':
-                logs.standard = eventJSON.entries[i].value.toString()
+                mints.standard = eventJSON.entries[i].value.toString()
                 break
               case key == 'event':
-                logs.event = eventJSON.entries[i].value.toString()
+                mints.event = eventJSON.entries[i].value.toString()
                 break
               case key == 'version':
-                logs.version = eventJSON.entries[i].value.toString()
+                mints.version = eventJSON.entries[i].value.toString()
+                break
+              case key == 'data':
+                let j = 0
+                let dataArray = eventJSON.entries[i].value.toArray()
+                while(j < dataArray.length){
+                  let dataObject = dataArray[j].toObject()
+                  for(let k = 0; k < dataObject.entries.length; k++){
+                    let key = dataObject.entries[k].key.toString()
+                    switch (true) {
+                      case key == 'owner_id':
+                        mints.owner_id = dataObject.entries[k].value.toString()
+                        break
+                      case key == 'token_ids':
+                        let tokenArray = dataObject.entries[k].value.toArray()
+                        let m = 0
+                        while (m < tokenArray.length){
+                          let tokenString = "none"
+                          if(tokenArray[m].toString().length > 0){
+                            tokenString = tokenArray[m].toString()
+                            mints.token_series_id = BigInt.fromString(tokenString.split(':')[0]).toI32()
+                            mints.token_id = BigInt.fromString(tokenString.split(':')[1]).toI32()
+                          }
+                          m++
+                        }
+                        break
+                      case key == 'memo':
+                        mints.memo = dataObject.entries[k].value.toString()
+                        break
+                    }
+                  }
+                  j++
+                }
                 break
             }
           }
-
-          //data
-          let data = eventJSON.entries[0].value.toObject()
-          for(let i = 0; i < data.entries.length; i++){
-            let key = data.entries[i].key.toString()
-
-            // Replace each key with the key of the data your are emitting,
-            // Ensure you add the keys to the Log entity and that the types are correct
-            switch (true) {
-              case key == 'adminId':
-                logs.adminId = data.entries[i].value.toString()
-                break
-              case key == 'accountId':
-                logs.accountId = data.entries[i].value.toString()
-                break
-              case key == 'adminSet':
-                logs.adminSet = data.entries[i].value.toBigInt()
-                break
-            }
-          }
-
         }
-        logs.save()
+        mints.save()
       }
+    }
+    
+} else {
+  log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
+}
 
-      accounts.log.push(logs.id);
+  // change the methodName here to the methodName emitting the log in the contract
+  if (functionCall.methodName == "nft_create_series") {
+    const receiptId = receipt.id.toBase58()
+    // Maps the JSON formatted log
+    let series = new NftCreateSerie(`${receiptId}`)
+
+    // Standard receipt properties
+    series.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+    series.blockHeight = BigInt.fromU64(blockHeader.height)
+    series.blockHash = blockHeader.hash.toBase58()
+    series.predecessorId = receipt.predecessorId
+    series.receiverId = receipt.receiverId
+    series.signerId = receipt.signerId
+    series.signerPublicKey = publicKey.bytes.toBase58()
+    series.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+    series.tokensBurned = outcome.tokensBurnt
+    series.outcomeId = outcome.id.toBase58()
+    series.executorId = outcome.executorId
+    series.outcomeBlockHash = outcome.blockHash.toBase58()
+    series.log = outcome.logs[0]
+
+    // Log Parsing
+    if(outcome.logs !=null && outcome.logs.length > 0){
+        let parsed = json.fromString(outcome.logs[0])
+        if(parsed.kind == JSONValueKind.OBJECT){
+
+          let entry = parsed.toObject()
+
+          // types JSON
+          // paras had some non-NEP 171 logs early on
+          for(let i = 0; i < entry.entries.length; i++){
+            let key = entry.entries[i].key.toString()
+            switch (true) {
+              case key == 'type':
+                series.type = entry.entries[i].value.toString()
+                break
+              case key == 'params':
+                if(entry.entries[i].value.kind == JSONValueKind.OBJECT){
+                  let paramObject = entry.entries[i].value.toObject()
+                  for(let m = 0; m < paramObject.entries.length; m++){
+                    let paramKey = paramObject.entries[m].key.toString()
+                    switch (true) {
+                      case paramKey == 'token_series_id':
+                        series.token_series_id = BigInt.fromString(paramObject.entries[m].value.toString()).toI32()
+                        break
+                      case paramKey == 'token_metadata':
+                          if(paramObject.entries[m].value.kind == JSONValueKind.OBJECT){
+                            let metaObject = paramObject.entries[m].value.toObject()
+                            for(let j = 0; j < metaObject.entries.length; j++){
+                              let metaKey = metaObject.entries[j].key.toString()
+                              switch (true) {
+                                case metaKey == 'title':
+                                  series.title = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toString() : null
+                                  break
+                                case metaKey == 'description':
+                                  series.description = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toString() : null
+                                  break
+                                case metaKey == 'media':
+                                  series.media = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toString() : null
+                                  break
+                                case metaKey == 'media_hash':
+                                  series.media_hash = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toString() : null
+                                  break
+                                case metaKey == 'copies':
+                                  series.copies = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toBigInt().toI32() : 0
+                                  break
+                                case metaKey == 'issued_at':
+                                  series.issued_at = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toBigInt() : null
+                                  break
+                                case metaKey == 'expires_at':
+                                  series.expires_at = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toBigInt() : null
+                                  break
+                                case metaKey == 'starts_at':
+                                  series.starts_at = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toBigInt() : null
+                                  break
+                                case metaKey == 'updated_at':
+                                  series.updated_at = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toBigInt() : null
+                                  break
+                                case metaKey == 'extra':
+                                  series.extra = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toString() : null
+                                  break
+                                case metaKey == 'reference':
+                                  series.reference = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toString() : null
+                                  break
+                                case metaKey == 'reference_hash':
+                                  series.reference_hash = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toString() : null
+                                  break
+                              }
+                            }
+                          }
+                        break
+                      case paramKey == 'creator_id':
+                        series.creator_id = paramObject.entries[m].value.kind != JSONValueKind.NULL ? paramObject.entries[m].value.toString() : null
+                        break
+                      case paramKey == 'price':
+                        series.price = paramObject.entries[m].value.kind != JSONValueKind.NULL ? BigInt.fromString(paramObject.entries[m].value.toString()) : null
+                        break
+                      case paramKey == 'royalty':
+                        log.info("Royalty Object topkey is: {}", [paramKey]);
+                        if(paramObject.entries[m].value.kind == JSONValueKind.OBJECT){
+                          let royaltyObject = paramObject.entries[m].value.toObject()
+                          for(let p = 0; p < royaltyObject.entries.length; p++){
+                            let royalties = new Royalty(`${receiptId}-${p}`)
+                            log.info("Royalty Object id is: {}", [royalties.id]);
+                            log.info("Royalty Object key is: {}", [royaltyObject.entries[p].key.toString()]);
+                            log.info("Royalty Object value is: {}", [royaltyObject.entries[p].value.toBigInt().toI32().toString()]);
+                            royalties.account = royaltyObject.entries[p].key.toString()
+                            royalties.amount = royaltyObject.entries[p].value.toBigInt().toI32()
+                            royalties.save()
+                            series.royalties = royalties.id
+                          }
+                        }
+                        break
+                    }
+                  }
+                }
+              break
+            }
+          }
+        series.save()
+      }
+    }
+    
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
   }
-  accounts.save();
+
+  // change the methodName here to the methodName emitting the log in the contract
+  if (functionCall.methodName == "nft_set_series_price") {
+    const receiptId = receipt.id.toBase58()
+    // Maps the JSON formatted log
+    let series = new NftSetSeriesPrice(`${receiptId}`)
+
+    // Standard receipt properties
+    series.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+    series.blockHeight = BigInt.fromU64(blockHeader.height)
+    series.blockHash = blockHeader.hash.toBase58()
+    series.predecessorId = receipt.predecessorId
+    series.receiverId = receipt.receiverId
+    series.signerId = receipt.signerId
+    series.signerPublicKey = publicKey.bytes.toBase58()
+    series.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+    series.tokensBurned = outcome.tokensBurnt
+    series.outcomeId = outcome.id.toBase58()
+    series.executorId = outcome.executorId
+    series.outcomeBlockHash = outcome.blockHash.toBase58()
+    series.log = outcome.logs[0]
+
+    // Log Parsing
+    if(outcome.logs !=null && outcome.logs.length > 0){
+        let parsed = json.fromString(outcome.logs[0])
+        if(parsed.kind == JSONValueKind.OBJECT){
+
+          let entry = parsed.toObject()
+
+          // types JSON
+          // paras had some non-NEP 171 logs early on
+          for(let i = 0; i < entry.entries.length; i++){
+            let key = entry.entries[i].key.toString()
+            switch (true) {
+              case key == 'type':
+                series.type = entry.entries[i].value.toString()
+                break
+              case key == 'params':
+                if(entry.entries[i].value.kind == JSONValueKind.OBJECT){
+                  let paramObject = entry.entries[i].value.toObject()
+                  for(let m = 0; m < paramObject.entries.length; m++){
+                    let paramKey = paramObject.entries[m].key.toString()
+                    switch (true) {
+                      case paramKey == 'token_series_id':
+                        series.token_series_id = BigInt.fromString(paramObject.entries[m].value.toString()).toI32()
+                        break
+                      case paramKey == 'price':
+                        series.price = paramObject.entries[m].value.kind != JSONValueKind.NULL ? BigInt.fromString(paramObject.entries[m].value.toString()) : null
+                        break
+                    }
+                  }
+                }
+              break
+            }
+          }
+        series.save()
+      }
+    }
+    
+  } else {
+    log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
+  }
+
+  // change the methodName here to the methodName emitting the log in the contract
+  if (functionCall.methodName == "nft_on_approve") {
+    const receiptId = receipt.id.toBase58()
+    // Maps the JSON formatted log
+    let series = new NftOnApprove(`${receiptId}`)
+
+    // Standard receipt properties
+    series.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+    series.blockHeight = BigInt.fromU64(blockHeader.height)
+    series.blockHash = blockHeader.hash.toBase58()
+    series.predecessorId = receipt.predecessorId
+    series.receiverId = receipt.receiverId
+    series.signerId = receipt.signerId
+    series.signerPublicKey = publicKey.bytes.toBase58()
+    series.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+    series.tokensBurned = outcome.tokensBurnt
+    series.outcomeId = outcome.id.toBase58()
+    series.executorId = outcome.executorId
+    series.outcomeBlockHash = outcome.blockHash.toBase58()
+    series.log = outcome.logs[0]
+
+    // Log Parsing
+    if(outcome.logs !=null && outcome.logs.length > 0){
+        let parsed = json.fromString(outcome.logs[0])
+        if(parsed.kind == JSONValueKind.OBJECT){
+
+          let entry = parsed.toObject()
+
+          // types JSON
+          // paras had some non-NEP 171 logs early on
+          for(let i = 0; i < entry.entries.length; i++){
+            let key = entry.entries[i].key.toString()
+            switch (true) {
+              case key == 'type':
+                series.type = entry.entries[i].value.toString()
+                break
+              case key == 'params':
+                if(entry.entries[i].value.kind == JSONValueKind.OBJECT){
+                  let paramObject = entry.entries[i].value.toObject()
+                  for(let m = 0; m < paramObject.entries.length; m++){
+                    let paramKey = paramObject.entries[m].key.toString()
+                    switch (true) {
+                      case paramKey == 'owner_id':
+                        series.owner_id = paramObject.entries[m].value.toString()
+                        break
+                      case paramKey == 'approval_id':
+                        series.approval_id = paramObject.entries[m].value.toBigInt().toI32()
+                        break
+                      case paramKey == 'nft_contract_id':
+                        series.nft_contract_id = paramObject.entries[m].value.toString()
+                        break
+                      case key == 'token_id':
+                        let tokenArray = paramObject.entries[m].value.toArray()
+                        let n = 0
+                        while (n < tokenArray.length){
+                          let tokenString = "none"
+                          if(tokenArray[n].toString().length > 0){
+                            tokenString = tokenArray[n].toString()
+                            series.token_series_id = BigInt.fromString(tokenString.split(':')[0]).toI32()
+                            series.token_id = BigInt.fromString(tokenString.split(':')[1]).toI32()
+                          }
+                          m++
+                        }
+                        break
+                      case paramKey == 'ft_token_id':
+                        series.owner_id = paramObject.entries[m].value.toString()
+                        break
+                      case paramKey == 'price':
+                        series.price = paramObject.entries[m].value.kind != JSONValueKind.NULL ? BigInt.fromString(paramObject.entries[m].value.toString()) : null
+                        break
+                      case paramKey == 'started_at':
+                        series.started_at = paramObject.entries[m].value.kind != JSONValueKind.NULL ? paramObject.entries[m].value.toBigInt() : null
+                        break
+                      case paramKey == 'ended_at':
+                        series.ended_at = paramObject.entries[m].value.kind != JSONValueKind.NULL ? paramObject.entries[m].value.toBigInt() : null
+                        break
+                      case paramKey == 'end_price':
+                        series.end_price = paramObject.entries[m].value.kind != JSONValueKind.NULL ? BigInt.fromString(paramObject.entries[m].value.toString()) : null
+                        break
+                      case paramKey == 'is_auction':
+                        series.is_auction = paramObject.entries[m].value.toBool()
+                        break
+                    }
+                  }
+                }
+              break
+            }
+          }
+        series.save()
+      }
+    }
+    
+  } else {
+    log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
+  }
+
+  // change the methodName here to the methodName emitting the log in the contract
+  if (functionCall.methodName == "nft_transfer_payout") {
+    const receiptId = receipt.id.toBase58()
+    // Maps the JSON formatted log to the LOG entity
+    let mints = new NftTransferPayout(`${receiptId}`)
+
+    // Standard receipt properties
+    mints.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+    mints.blockHeight = BigInt.fromU64(blockHeader.height)
+    mints.blockHash = blockHeader.hash.toBase58()
+    mints.predecessorId = receipt.predecessorId
+    mints.receiverId = receipt.receiverId
+    mints.signerId = receipt.signerId
+    mints.signerPublicKey = publicKey.bytes.toBase58()
+    mints.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+    mints.tokensBurned = outcome.tokensBurnt
+    mints.outcomeId = outcome.id.toBase58()
+    mints.executorId = outcome.executorId
+    mints.outcomeBlockHash = outcome.blockHash.toBase58()
+
+    // Log Parsing
+    if(outcome.logs !=null && outcome.logs.length > 0){
+   
+      if(outcome.logs[1].split(':')[0] == 'EVENT_JSON'){
+
+        // this part is required to turn the paras contract EVENT_JSON into valid JSON
+        let delimiter = ':'
+        let parts = outcome.logs[1].split(delimiter)
+        parts[0] = '"EVENT_JSON"'
+        let newString = parts.join(delimiter)
+        let formatString = '{'+newString+'}'
+        let parsed = json.fromString(formatString)
+
+        
+        if(parsed.kind == JSONValueKind.OBJECT){
+          let entry = parsed.toObject()
+
+          //EVENT_JSON
+          let eventJSON = entry.entries[0].value.toObject()
+
+          //standard, version, event (these stay the same for a NEP 171 emmitted log)
+          for(let i = 0; i < eventJSON.entries.length; i++){
+            let key = eventJSON.entries[i].key.toString()
+            switch (true) {
+              case key == 'standard':
+                mints.standard = eventJSON.entries[i].value.toString()
+                break
+              case key == 'event':
+                mints.event = eventJSON.entries[i].value.toString()
+                break
+              case key == 'version':
+                mints.version = eventJSON.entries[i].value.toString()
+                break
+              case key == 'data':
+                let j = 0
+                let dataArray = eventJSON.entries[i].value.toArray()
+                while(j < dataArray.length){
+                  let dataObject = dataArray[j].toObject()
+                  for(let k = 0; k < dataObject.entries.length; k++){
+                    let key = dataObject.entries[k].key.toString()
+                    switch (true) {
+                      case key == 'authorized_id':
+                        mints.authorized_id = dataObject.entries[k].value.toString()
+                        break
+                      case key == 'old_owner_id':
+                        mints.old_owner_id = dataObject.entries[k].value.toString()
+                        break
+                      case key == 'new_owner_id':
+                        mints.new_owner_id = dataObject.entries[k].value.toString()
+                        break
+                      case key == 'token_ids':
+                        let tokenArray = dataObject.entries[k].value.toArray()
+                        let m = 0
+                        while (m < tokenArray.length){
+                          let tokenString = "none"
+                          if(tokenArray[m].toString().length > 0){
+                            tokenString = tokenArray[m].toString()
+                            mints.token_series_id = BigInt.fromString(tokenString.split(':')[0]).toI32()
+                            mints.token_id = BigInt.fromString(tokenString.split(':')[1]).toI32()
+                          }
+                          m++
+                        }
+                        break
+                    }
+                  }
+                  j++
+                }
+                break
+            }
+          }
+        }
+        mints.save()
+      }
+    }
+    
+} else {
+  log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
+}
+
+  // change the methodName here to the methodName emitting the log in the contract
+  if (functionCall.methodName == "nft_decrease_series_copies") {
+    const receiptId = receipt.id.toBase58()
+    // Maps the JSON formatted log
+    let series = new NftDecreaseSeriesCopy(`${receiptId}`)
+
+    // Standard receipt properties
+    series.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+    series.blockHeight = BigInt.fromU64(blockHeader.height)
+    series.blockHash = blockHeader.hash.toBase58()
+    series.predecessorId = receipt.predecessorId
+    series.receiverId = receipt.receiverId
+    series.signerId = receipt.signerId
+    series.signerPublicKey = publicKey.bytes.toBase58()
+    series.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+    series.tokensBurned = outcome.tokensBurnt
+    series.outcomeId = outcome.id.toBase58()
+    series.executorId = outcome.executorId
+    series.outcomeBlockHash = outcome.blockHash.toBase58()
+    series.log = outcome.logs[0]
+
+    // Log Parsing
+    if(outcome.logs !=null && outcome.logs.length > 0){
+        let parsed = json.fromString(outcome.logs[0])
+        if(parsed.kind == JSONValueKind.OBJECT){
+
+          let entry = parsed.toObject()
+
+          // types JSON
+          // paras had some non-NEP 171 logs early on
+          for(let i = 0; i < entry.entries.length; i++){
+            let key = entry.entries[i].key.toString()
+            switch (true) {
+              case key == 'type':
+                series.type = entry.entries[i].value.toString()
+                break
+              case key == 'params':
+                if(entry.entries[i].value.kind == JSONValueKind.OBJECT){
+                  let paramObject = entry.entries[i].value.toObject()
+                  for(let m = 0; m < paramObject.entries.length; m++){
+                    let paramKey = paramObject.entries[m].key.toString()
+                    switch (true) {
+                      case paramKey == 'token_series_id':
+                        series.token_series_id = BigInt.fromString(paramObject.entries[m].value.toString()).toI32()
+                        break
+                      case paramKey == 'copies':
+                        series.copies = BigInt.fromString(paramObject.entries[m].value.toString()).toI32()
+                        break
+                      case paramKey == 'is_non_mintable':
+                        series.is_non_mintable = paramObject.entries[m].value.toBool()
+                        break
+                    }
+                  }
+                }
+              break
+            }
+          }
+        series.save()
+      }
+    }
+    
+  } else {
+    log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
+  }
 }

@@ -1,18 +1,193 @@
-type Account @entity {
+type _Schema_
+  @fulltext(
+    name: "tokenSearch"
+    language: en
+    algorithm: rank
+    include: [
+      { entity: "NftCreateSerie", fields: [{ name: "creator_id" }, { name: "title" }] }]
+  )
+
+type NftMint @entity {
   id: ID!
-  signerId: String!
-  log: [Log!]!
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  predecessorId: String
+  receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+  standard: String
+  version: String
+  event: String
+  owner_id: String
+  token_series_id: Int
+  token_id: Int
+  type: String
+  sender_id: String
+  receive_id: String
 }
 
-type Log @entity {
+type Royalty @entity {
   id: ID!
-  standard: String!
-  version: String!
-  event: String!
-  adminId: String
-  adminSet: BigInt
-  accountId: String
-  did: String
-  registered: BigInt
-  owner: String
+  account: String!
+  amount: Int!
+}
+
+type NftCreateSerie @entity {
+  id: ID!
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  predecessorId: String
+  receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+  type: String
+  token_series_id: Int
+  title: String
+  description: String
+  media: String
+  media_hash: String
+  copies: Int
+  issued_at: BigInt
+  expires_at: BigInt
+  starts_at: BigInt
+  updated_at: BigInt
+  extra: String
+  reference: String
+  reference_hash: String
+  creator_id: String
+  price: BigInt
+  royalties: Royalty
+}
+
+type NftSetSeriesPrice @entity {
+  id: ID!
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  predecessorId: String
+  receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+  type: String
+  token_series_id: Int
+  price: BigInt
+}
+
+type NftOnApprove @entity {
+  id: ID!
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  predecessorId: String
+  receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+  type: String
+  owner_id: String
+  approval_id: Int
+  nft_contract_id: String
+  token_series_id: Int
+  token_id: Int
+  ft_token_id: String
+  price: BigInt
+  started_at: BigInt
+  ended_at: BigInt
+  end_price: BigInt
+  is_auction: Boolean
+}
+
+type NftBuy @entity {
+  id: ID!
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  predecessorId: String
+  receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+  standard: String
+  version: String
+  event: String
+  owner_id: String
+  token_series_id: Int
+  token_id: Int
+  memo: String
+}
+
+type NftTransferPayout @entity {
+  id: ID!
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  predecessorId: String
+  receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+  standard: String
+  version: String
+  event: String
+  authorized_id: String
+  old_owner_id: String
+  new_owner_id: String
+  token_series_id: Int
+  token_id: Int
+}
+
+type NftDecreaseSeriesCopy @entity {
+   id: ID!
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  predecessorId: String
+  receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+  type: String
+  token_series_id: Int
+  copies: Int
+  is_non_mintable: Boolean
 }

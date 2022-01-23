@@ -1,15 +1,15 @@
 {
-  "name": "near-receipts",
+  "name": "paras-subgraph",
   "version": "0.1.0",
-  "repository": "https://github.com/VitalPointAI/graph-near-receipts.git",
+  "repository": "https://github.com/VitalPointAI/subgraph-parasv2.git",
   "license": "MIT",
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy <GITHUBNAME/SUBGRAPH> --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/"
+    "deploy": "graph deploy aluhning/parasv2 --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/"
   },
   "devDependencies": {
-    "@graphprotocol/graph-cli": "0.25.1",
+    "@graphprotocol/graph-cli": "0.26.0",
     "@graphprotocol/graph-ts": "0.24.1"
   },
   "dependencies": {
