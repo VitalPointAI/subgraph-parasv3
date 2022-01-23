@@ -282,10 +282,11 @@ function handleAction(
   // change the methodName here to the methodName emitting the log in the contract
   if (functionCall.methodName == "nft_create_series") {
     const receiptId = receipt.id.toBase58()
+    log.info('outcome log here is: {}', [outcome.logs[0]])
     if(outcome.logs !=null && outcome.logs.length > 0){
       for(let x = 0; x < outcome.logs.length; x++){
         // Maps the JSON formatted log
-        let series = new NftCreateSerie(`${receiptId}`)
+        let series = new NftCreateSerie(`${receiptId}-${x}`)
 
         // Standard receipt properties
         series.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
@@ -392,11 +393,7 @@ function handleAction(
                             royalties.save()
                             series.royalties = royalties.id
                           }
-                        } else {
-                          let royalties = new Royalty(`${receiptId}-empty`)
-                          royalties.save()
-                          series.royalties = royalties.id
-                        }
+                        } 
                         break
                     }
                   }
@@ -738,9 +735,10 @@ function handleAction(
   if (functionCall.methodName == "nft_mint_batch") {
     const receiptId = receipt.id.toBase58()
     // Maps the JSON formatted log
+    log.info('outcome logs is {}', [outcome.logs[0]])
     if(outcome.logs !=null && outcome.logs.length > 0){
       for(let x = 0; x < outcome.logs.length; x++){
-        let series = new NftMintBatch(`${receiptId}`)
+        let series = new NftMintBatch(`${receiptId}-${x}`)
 
         // Standard receipt properties
         series.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
@@ -780,17 +778,8 @@ function handleAction(
                     let paramKey = paramObject.entries[m].key.toString()
                     switch (true) {
                       case paramKey == 'token_id':
-                        let tokenArray = paramObject.entries[m].value.toArray()
-                        let n = 0
-                        while (n < tokenArray.length){
-                          let tokenString = "none"
-                          if(tokenArray[m].toString().length > 0){
-                            tokenString = tokenArray[n].toString()
-                            series.token_series_id = BigInt.fromString(tokenString.split(':')[0]).toI32()
-                            series.token_id = BigInt.fromString(tokenString.split(':')[1]).toI32()
-                          }
-                          n++
-                        }
+                        series.token_series_id = BigInt.fromString(paramObject.entries[m].value.toString().split(':')[0]).toI32()
+                        series.token_id = BigInt.fromString(paramObject.entries[m].value.toString().split(':')[1]).toI32()
                         break
                       case paramKey == 'sender_id':
                         series.sender_id = paramObject.entries[m].value.toString()
