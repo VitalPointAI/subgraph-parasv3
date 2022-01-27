@@ -39,7 +39,7 @@ function handleAction(
   const functionCall = action.toFunctionCall();
   
   // change the methodName here to the methodName emitting the log in the contract
-  if (functionCall.methodName == "nft_buy") {
+  if (functionCall.methodName == "nft_mint") {
       const receiptId = receipt.id.toBase58()
       // Maps the JSON formatted log to the LOG entity
       let mints = new NftMint(`${receiptId}`)
@@ -184,7 +184,7 @@ function handleAction(
   }
 
   // change the methodName here to the methodName emitting the log in the contract
-  if (functionCall.methodName == "nft_mint") {
+  if (functionCall.methodName == "nft_buy") {
     const receiptId = receipt.id.toBase58()
     // Maps the JSON formatted log to the LOG entity
     let mints = new NftBuy(`${receiptId}`)

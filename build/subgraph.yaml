@@ -6,13 +6,17 @@ schema:
 features:
   - ipfsOnEthereumContracts
   - fullTextSearch
+  - grafting
+graft:
+  base: QmSYZdm6AMpryqBE9YFtom49QN9aK1GRdom9np3BFRJmug
+  block: 48231990
 dataSources:
   - kind: near
     name: receipts
     network: near-mainnet
     source:
       account: x.paras.near
-      startBlock: 46977400
+      startBlock: 46959101
     mapping:
       apiVersion: 0.0.5
       language: wasm/assemblyscript
