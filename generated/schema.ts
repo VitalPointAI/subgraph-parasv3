@@ -332,22 +332,38 @@ export class NftMint extends Entity {
     }
   }
 
-  get token_series_id(): i32 {
+  get token_series_id(): string | null {
     let value = this.get("token_series_id");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set token_series_id(value: i32) {
-    this.set("token_series_id", Value.fromI32(value));
+  set token_series_id(value: string | null) {
+    if (!value) {
+      this.unset("token_series_id");
+    } else {
+      this.set("token_series_id", Value.fromString(<string>value));
+    }
   }
 
-  get token_id(): i32 {
+  get token_id(): string | null {
     let value = this.get("token_id");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set token_id(value: i32) {
-    this.set("token_id", Value.fromI32(value));
+  set token_id(value: string | null) {
+    if (!value) {
+      this.unset("token_id");
+    } else {
+      this.set("token_id", Value.fromString(<string>value));
+    }
   }
 
   get type(): string | null {
@@ -451,13 +467,21 @@ export class Royalty extends Entity {
     }
   }
 
-  get amount(): i32 {
+  get amount(): BigInt | null {
     let value = this.get("amount");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
   }
 
-  set amount(value: i32) {
-    this.set("amount", Value.fromI32(value));
+  set amount(value: BigInt | null) {
+    if (!value) {
+      this.unset("amount");
+    } else {
+      this.set("amount", Value.fromBigInt(<BigInt>value));
+    }
   }
 }
 
@@ -731,13 +755,21 @@ export class NftCreateSerie extends Entity {
     }
   }
 
-  get token_series_id(): i32 {
+  get token_series_id(): string | null {
     let value = this.get("token_series_id");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set token_series_id(value: i32) {
-    this.set("token_series_id", Value.fromI32(value));
+  set token_series_id(value: string | null) {
+    if (!value) {
+      this.unset("token_series_id");
+    } else {
+      this.set("token_series_id", Value.fromString(<string>value));
+    }
   }
 
   get title(): string | null {
@@ -808,13 +840,21 @@ export class NftCreateSerie extends Entity {
     }
   }
 
-  get copies(): i32 {
+  get copies(): BigInt | null {
     let value = this.get("copies");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
   }
 
-  set copies(value: i32) {
-    this.set("copies", Value.fromI32(value));
+  set copies(value: BigInt | null) {
+    if (!value) {
+      this.unset("copies");
+    } else {
+      this.set("copies", Value.fromBigInt(<BigInt>value));
+    }
   }
 
   get issued_at(): BigInt | null {
@@ -1260,13 +1300,21 @@ export class NftSetSeriesPrice extends Entity {
     }
   }
 
-  get token_series_id(): i32 {
+  get token_series_id(): string | null {
     let value = this.get("token_series_id");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set token_series_id(value: i32) {
-    this.set("token_series_id", Value.fromI32(value));
+  set token_series_id(value: string | null) {
+    if (!value) {
+      this.unset("token_series_id");
+    } else {
+      this.set("token_series_id", Value.fromString(<string>value));
+    }
   }
 
   get price(): BigInt | null {
@@ -1574,13 +1622,21 @@ export class NftOnApprove extends Entity {
     }
   }
 
-  get approval_id(): i32 {
+  get approval_id(): string | null {
     let value = this.get("approval_id");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set approval_id(value: i32) {
-    this.set("approval_id", Value.fromI32(value));
+  set approval_id(value: string | null) {
+    if (!value) {
+      this.unset("approval_id");
+    } else {
+      this.set("approval_id", Value.fromString(<string>value));
+    }
   }
 
   get nft_contract_id(): string | null {
@@ -1600,22 +1656,38 @@ export class NftOnApprove extends Entity {
     }
   }
 
-  get token_series_id(): i32 {
+  get token_series_id(): string | null {
     let value = this.get("token_series_id");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set token_series_id(value: i32) {
-    this.set("token_series_id", Value.fromI32(value));
+  set token_series_id(value: string | null) {
+    if (!value) {
+      this.unset("token_series_id");
+    } else {
+      this.set("token_series_id", Value.fromString(<string>value));
+    }
   }
 
-  get token_id(): i32 {
+  get token_id(): string | null {
     let value = this.get("token_id");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set token_id(value: i32) {
-    this.set("token_id", Value.fromI32(value));
+  set token_id(value: string | null) {
+    if (!value) {
+      this.unset("token_id");
+    } else {
+      this.set("token_id", Value.fromString(<string>value));
+    }
   }
 
   get ft_token_id(): string | null {
@@ -2034,22 +2106,38 @@ export class NftBuy extends Entity {
     }
   }
 
-  get token_series_id(): i32 {
+  get token_series_id(): string | null {
     let value = this.get("token_series_id");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set token_series_id(value: i32) {
-    this.set("token_series_id", Value.fromI32(value));
+  set token_series_id(value: string | null) {
+    if (!value) {
+      this.unset("token_series_id");
+    } else {
+      this.set("token_series_id", Value.fromString(<string>value));
+    }
   }
 
-  get token_id(): i32 {
+  get token_id(): string | null {
     let value = this.get("token_id");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set token_id(value: i32) {
-    this.set("token_id", Value.fromI32(value));
+  set token_id(value: string | null) {
+    if (!value) {
+      this.unset("token_id");
+    } else {
+      this.set("token_id", Value.fromString(<string>value));
+    }
   }
 
   get memo(): string | null {
@@ -2427,22 +2515,38 @@ export class NftTransferPayout extends Entity {
     }
   }
 
-  get token_series_id(): i32 {
+  get token_series_id(): string | null {
     let value = this.get("token_series_id");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set token_series_id(value: i32) {
-    this.set("token_series_id", Value.fromI32(value));
+  set token_series_id(value: string | null) {
+    if (!value) {
+      this.unset("token_series_id");
+    } else {
+      this.set("token_series_id", Value.fromString(<string>value));
+    }
   }
 
-  get token_id(): i32 {
+  get token_id(): string | null {
     let value = this.get("token_id");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set token_id(value: i32) {
-    this.set("token_id", Value.fromI32(value));
+  set token_id(value: string | null) {
+    if (!value) {
+      this.unset("token_id");
+    } else {
+      this.set("token_id", Value.fromString(<string>value));
+    }
   }
 }
 
@@ -2721,22 +2825,38 @@ export class NftDecreaseSeriesCopy extends Entity {
     }
   }
 
-  get token_series_id(): i32 {
+  get token_series_id(): string | null {
     let value = this.get("token_series_id");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set token_series_id(value: i32) {
-    this.set("token_series_id", Value.fromI32(value));
+  set token_series_id(value: string | null) {
+    if (!value) {
+      this.unset("token_series_id");
+    } else {
+      this.set("token_series_id", Value.fromString(<string>value));
+    }
   }
 
-  get copies(): i32 {
+  get copies(): BigInt | null {
     let value = this.get("copies");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toBigInt();
+    }
   }
 
-  set copies(value: i32) {
-    this.set("copies", Value.fromI32(value));
+  set copies(value: BigInt | null) {
+    if (!value) {
+      this.unset("copies");
+    } else {
+      this.set("copies", Value.fromBigInt(<BigInt>value));
+    }
   }
 
   get is_non_mintable(): boolean {
@@ -3019,22 +3139,38 @@ export class NftMintBatch extends Entity {
     }
   }
 
-  get token_series_id(): i32 {
+  get token_series_id(): string | null {
     let value = this.get("token_series_id");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set token_series_id(value: i32) {
-    this.set("token_series_id", Value.fromI32(value));
+  set token_series_id(value: string | null) {
+    if (!value) {
+      this.unset("token_series_id");
+    } else {
+      this.set("token_series_id", Value.fromString(<string>value));
+    }
   }
 
-  get token_id(): i32 {
+  get token_id(): string | null {
     let value = this.get("token_id");
-    return value!.toI32();
+    if (!value || value.kind == ValueKind.NULL) {
+      return null;
+    } else {
+      return value.toString();
+    }
   }
 
-  set token_id(value: i32) {
-    this.set("token_id", Value.fromI32(value));
+  set token_id(value: string | null) {
+    if (!value) {
+      this.unset("token_id");
+    } else {
+      this.set("token_id", Value.fromString(<string>value));
+    }
   }
 
   get sender_id(): string | null {

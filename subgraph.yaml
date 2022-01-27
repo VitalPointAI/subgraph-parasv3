@@ -7,9 +7,9 @@ features:
   - ipfsOnEthereumContracts
   - fullTextSearch
   - grafting
-graft:
-  base: QmSYZdm6AMpryqBE9YFtom49QN9aK1GRdom9np3BFRJmug # Subgraph ID of base subgraph
-  block: 48231990 # Block number
+# graft:
+#   base: QmSYZdm6AMpryqBE9YFtom49QN9aK1GRdom9np3BFRJmug # Subgraph ID of base subgraph
+#   block: 48231990 # Block number
 dataSources:
   - kind: near
     name: receipts # could also be blocks

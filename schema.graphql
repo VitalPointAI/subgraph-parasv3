@@ -26,8 +26,8 @@ type NftMint @entity {
   version: String
   event: String
   owner_id: String
-  token_series_id: Int
-  token_id: Int
+  token_series_id: String
+  token_id: String
   type: String
   sender_id: String
   receive_id: String
@@ -36,7 +36,7 @@ type NftMint @entity {
 type Royalty @entity {
   id: ID!
   account: String
-  amount: Int
+  amount: BigInt
 }
 
 type NftCreateSerie @entity {
@@ -55,12 +55,12 @@ type NftCreateSerie @entity {
   outcomeBlockHash: String
   log: String
   type: String
-  token_series_id: Int
+  token_series_id: String
   title: String
   description: String
   media: String
   media_hash: String
-  copies: Int
+  copies: BigInt
   issued_at: BigInt
   expires_at: BigInt
   starts_at: BigInt
@@ -89,7 +89,7 @@ type NftSetSeriesPrice @entity {
   outcomeBlockHash: String
   log: String
   type: String
-  token_series_id: Int
+  token_series_id: String
   price: BigInt
 }
 
@@ -110,10 +110,10 @@ type NftOnApprove @entity {
   log: String
   type: String
   owner_id: String
-  approval_id: Int
+  approval_id: String
   nft_contract_id: String
-  token_series_id: Int
-  token_id: Int
+  token_series_id: String
+  token_id: String
   ft_token_id: String
   price: BigInt
   started_at: BigInt
@@ -141,8 +141,8 @@ type NftBuy @entity {
   version: String
   event: String
   owner_id: String
-  token_series_id: Int
-  token_id: Int
+  token_series_id: String
+  token_id: String
   memo: String
 }
 
@@ -167,8 +167,8 @@ type NftTransferPayout @entity {
   authorized_id: String
   old_owner_id: String
   new_owner_id: String
-  token_series_id: Int
-  token_id: Int
+  token_series_id: String
+  token_id: String
 }
 
 type NftDecreaseSeriesCopy @entity {
@@ -187,8 +187,8 @@ type NftDecreaseSeriesCopy @entity {
   outcomeBlockHash: String
   log: String
   type: String
-  token_series_id: Int
-  copies: Int
+  token_series_id: String
+  copies: BigInt
   is_non_mintable: Boolean
 }
 
@@ -208,8 +208,8 @@ type NftMintBatch @entity {
   outcomeBlockHash: String
   log: String
   type: String
-  token_series_id: Int
-  token_id: Int
+  token_series_id: String
+  token_id: String
   sender_id: String
   receive_id: String
 }

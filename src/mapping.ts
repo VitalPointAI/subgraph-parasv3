@@ -109,8 +109,8 @@ function handleAction(
                             let tokenString = "none"
                             if(tokenArray[m].toString().length > 0){
                               tokenString = tokenArray[m].toString()
-                              mints.token_series_id = BigInt.fromString(tokenString.split(':')[0]).toI32()
-                              mints.token_id = BigInt.fromString(tokenString.split(':')[1]).toI32()
+                              mints.token_series_id = tokenString.split(':')[0]
+                              mints.token_id = tokenString.split(':')[1]
                             }
                             m++
                           }
@@ -161,8 +161,8 @@ function handleAction(
                     switch (true) {
                       case key == 'token_id':
                         let tokenString = paramObject.entries[m].value.toString()
-                        mints.token_series_id = BigInt.fromString(tokenString.split(':')[0]).toI32()
-                        mints.token_id = BigInt.fromString(tokenString.split(':')[1]).toI32()
+                        mints.token_series_id = tokenString.split(':')[0]
+                        mints.token_id = tokenString.split(':')[1]
                         break
                       case key == 'sender_id':
                         mints.sender_id = paramObject.entries[m].value.toString()
@@ -254,8 +254,8 @@ function handleAction(
                           let tokenString = "none"
                           if(tokenArray[m].toString().length > 0){
                             tokenString = tokenArray[m].toString()
-                            mints.token_series_id = BigInt.fromString(tokenString.split(':')[0]).toI32()
-                            mints.token_id = BigInt.fromString(tokenString.split(':')[1]).toI32()
+                            mints.token_series_id = tokenString.split(':')[0]
+                            mints.token_id = tokenString.split(':')[1]
                           }
                           m++
                         }
@@ -325,7 +325,7 @@ function handleAction(
                     let paramKey = paramObject.entries[m].key.toString()
                     switch (true) {
                       case paramKey == 'token_series_id':
-                        series.token_series_id = BigInt.fromString(paramObject.entries[m].value.toString()).toI32()
+                        series.token_series_id = paramObject.entries[m].value.toString()
                         break
                       case paramKey == 'token_metadata':
                           if(paramObject.entries[m].value.kind == JSONValueKind.OBJECT){
@@ -346,7 +346,7 @@ function handleAction(
                                   series.media_hash = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toString() : null
                                   break
                                 case metaKey == 'copies':
-                                  series.copies = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toBigInt().toI32() : 0
+                                  series.copies = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toBigInt() : null
                                   break
                                 case metaKey == 'issued_at':
                                   series.issued_at = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toBigInt() : null
@@ -380,16 +380,12 @@ function handleAction(
                         series.price = paramObject.entries[m].value.kind != JSONValueKind.NULL ? BigInt.fromString(paramObject.entries[m].value.toString()) : null
                         break
                       case paramKey == 'royalty':
-                        log.info("Royalty Object topkey is: {}", [paramKey]);
                         if(paramObject.entries[m].value.kind == JSONValueKind.OBJECT){
                           let royaltyObject = paramObject.entries[m].value.toObject()
                           for(let p = 0; p < royaltyObject.entries.length; p++){
                             let royalties = new Royalty(`${receiptId}-${p}`)
-                            log.info("Royalty Object id is: {}", [royalties.id]);
-                            log.info("Royalty Object key is: {}", [royaltyObject.entries[p].key.toString()]);
-                            log.info("Royalty Object value is: {}", [royaltyObject.entries[p].value.toBigInt().toI32().toString()]);
                             royalties.account = royaltyObject.entries[p].key.toString()
-                            royalties.amount = royaltyObject.entries[p].value.toBigInt().toI32()
+                            royalties.amount = royaltyObject.entries[p].value.toBigInt()
                             royalties.save()
                             series.royalties = royalties.id
                           }
@@ -452,7 +448,7 @@ function handleAction(
                     let paramKey = paramObject.entries[m].key.toString()
                     switch (true) {
                       case paramKey == 'token_series_id':
-                        series.token_series_id = BigInt.fromString(paramObject.entries[m].value.toString()).toI32()
+                        series.token_series_id = paramObject.entries[m].value.toString()
                         break
                       case paramKey == 'price':
                         series.price = paramObject.entries[m].value.kind != JSONValueKind.NULL ? BigInt.fromString(paramObject.entries[m].value.toString()) : null
@@ -517,7 +513,7 @@ function handleAction(
                         series.owner_id = paramObject.entries[m].value.toString()
                         break
                       case paramKey == 'approval_id':
-                        series.approval_id = paramObject.entries[m].value.toBigInt().toI32()
+                        series.approval_id = paramObject.entries[m].value.toString()
                         break
                       case paramKey == 'nft_contract_id':
                         series.nft_contract_id = paramObject.entries[m].value.toString()
@@ -529,8 +525,8 @@ function handleAction(
                           let tokenString = "none"
                           if(tokenArray[n].toString().length > 0){
                             tokenString = tokenArray[n].toString()
-                            series.token_series_id = BigInt.fromString(tokenString.split(':')[0]).toI32()
-                            series.token_id = BigInt.fromString(tokenString.split(':')[1]).toI32()
+                            series.token_series_id = tokenString.split(':')[0]
+                            series.token_id = tokenString.split(':')[1]
                           }
                           m++
                         }
@@ -644,8 +640,8 @@ function handleAction(
                           let tokenString = "none"
                           if(tokenArray[m].toString().length > 0){
                             tokenString = tokenArray[m].toString()
-                            mints.token_series_id = BigInt.fromString(tokenString.split(':')[0]).toI32()
-                            mints.token_id = BigInt.fromString(tokenString.split(':')[1]).toI32()
+                            mints.token_series_id = tokenString.split(':')[0]
+                            mints.token_id = tokenString.split(':')[1]
                           }
                           m++
                         }
@@ -709,10 +705,10 @@ function handleAction(
                     let paramKey = paramObject.entries[m].key.toString()
                     switch (true) {
                       case paramKey == 'token_series_id':
-                        series.token_series_id = BigInt.fromString(paramObject.entries[m].value.toString()).toI32()
+                        series.token_series_id = paramObject.entries[m].value.toString()
                         break
                       case paramKey == 'copies':
-                        series.copies = BigInt.fromString(paramObject.entries[m].value.toString()).toI32()
+                        series.copies = paramObject.entries[m].value.toBigInt()
                         break
                       case paramKey == 'is_non_mintable':
                         series.is_non_mintable = paramObject.entries[m].value.toBool()
@@ -778,8 +774,8 @@ function handleAction(
                     let paramKey = paramObject.entries[m].key.toString()
                     switch (true) {
                       case paramKey == 'token_id':
-                        series.token_series_id = BigInt.fromString(paramObject.entries[m].value.toString().split(':')[0]).toI32()
-                        series.token_id = BigInt.fromString(paramObject.entries[m].value.toString().split(':')[1]).toI32()
+                        series.token_series_id = paramObject.entries[m].value.toString().split(':')[0]
+                        series.token_id = paramObject.entries[m].value.toString().split(':')[1]
                         break
                       case paramKey == 'sender_id':
                         series.sender_id = paramObject.entries[m].value.toString()
