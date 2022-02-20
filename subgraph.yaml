@@ -1,6 +1,6 @@
 specVersion: 0.0.4
-description: Paras V2 # the name of the subgraph
-repository: https://github.com/VitalPointAI/subgraph-parasv2.git # repo where subgraph project is stored
+description: Paras V3 # the name of the subgraph
+repository: https://github.com/VitalPointAI/subgraph-parasv3.git # repo where subgraph project is stored
 schema:
   file: ./schema.graphql
 features:

@@ -346,7 +346,8 @@ function handleAction(
                                   series.media_hash = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toString() : null
                                   break
                                 case metaKey == 'copies':
-                                  series.copies = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toBigInt() : null
+                                  series.copies = metaObject.entries[j].value.kind != JSONValueKind.NULL && metaObject.entries[j].value.kind == JSONValueKind.NUMBER ? metaObject.entries[j].value.toBigInt() 
+                                  : metaObject.entries[j].value.kind != JSONValueKind.NULL && metaObject.entries[j].value.kind == JSONValueKind.STRING ? BigInt.fromString(metaObject.entries[j].value.toString()) : null
                                   break
                                 case metaKey == 'issued_at':
                                   series.issued_at = metaObject.entries[j].value.kind != JSONValueKind.NULL ? metaObject.entries[j].value.toBigInt() : null
@@ -708,7 +709,8 @@ function handleAction(
                         series.token_series_id = paramObject.entries[m].value.toString()
                         break
                       case paramKey == 'copies':
-                        series.copies = paramObject.entries[m].value.toBigInt()
+                        series.copies = paramObject.entries[m].value.kind != JSONValueKind.NULL && paramObject.entries[m].value.kind == JSONValueKind.NUMBER ? paramObject.entries[m].value.toBigInt() 
+                        : paramObject.entries[m].value.kind != JSONValueKind.NULL && paramObject.entries[m].value.kind == JSONValueKind.STRING ? BigInt.fromString(paramObject.entries[m].value.toString()) : null
                         break
                       case paramKey == 'is_non_mintable':
                         series.is_non_mintable = paramObject.entries[m].value.toBool()

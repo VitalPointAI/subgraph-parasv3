@@ -1,10 +1,12 @@
-# NEAR Template Subgraph
+# Paras Subgraph for The Graph
 
-A NEAR Template Subgraph project to help you get started with The Graph for NEAR. For more information see the docs for [Building Subgraphs on NEAR](https://thegraph.com/docs/supported-networks/near).
+This is the Paras subgraph, currently deployed and being indexed on The Graphs Hosted Service [Paras V3 Subgraph](https://thegraph.com/hosted-service/subgraph/aluhning/parasv3).
 
-Customize the following files:
+If you want to make changes to it or create your own subgraphs, take a look at our [The Graph for Near Course](https://vitalpoint.ai/academy/the-graph-near-building-subgraphs/)
+
+Customization will mean editing the following files:
 - subgraph.yaml
 - schema.graphql
 - src/mappings.ts
 
-We've commented the three files to indicate what likely needs changing.
+Let us know if you're using the subgraph in your projects.  Interesting and motivating to us to see it being used.  Enjoy.
