@@ -1,12 +1,12 @@
 specVersion: 0.0.4
-description: Paras V3 # the name of the subgraph
-repository: https://github.com/VitalPointAI/subgraph-parasv3.git # repo where subgraph project is stored
+description: Paras V4 # the name of the subgraph
+repository: https://github.com/VitalPointAI/subgraph-paras-v4.git # repo where subgraph project is stored
 schema:
   file: ./schema.graphql
 features:
   - ipfsOnEthereumContracts
   - fullTextSearch
-  - grafting
+#  - grafting
 # graft:
 #   base: QmSYZdm6AMpryqBE9YFtom49QN9aK1GRdom9np3BFRJmug # Subgraph ID of base subgraph
 #   block: 48231990 # Block number
@@ -31,6 +31,7 @@ dataSources:
         - NftTransferPayout
         - NftDecreaseSeriesCopy
         - NftMintBatch
+        - NftTransfer
       receiptHandlers:
         - handler: handleReceipt # name of the receipt handler
 

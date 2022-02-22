@@ -213,3 +213,27 @@ type NftMintBatch @entity {
   sender_id: String
   receive_id: String
 }
+
+type NftTransfer @entity {
+  id: ID!
+  blockTime: BigInt
+  blockHeight: BigInt
+  blockHash: String
+  predecessorId: String
+  receiverId: String
+  signerId: String
+  signerPublicKey: String
+  gasBurned: BigInt
+  tokensBurned: BigInt
+  outcomeId: String
+  executorId: String
+  outcomeBlockHash: String
+  log: String
+  standard: String
+  version: String
+  event: String
+  old_owner_id: String
+  new_owner_id: String
+  token_series_id: String
+  token_id: String
+}

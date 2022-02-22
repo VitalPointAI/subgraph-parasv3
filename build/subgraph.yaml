@@ -1,12 +1,11 @@
 specVersion: 0.0.4
-description: Paras V2
-repository: https://github.com/VitalPointAI/subgraph-parasv2.git
+description: Paras V4
+repository: https://github.com/VitalPointAI/subgraph-paras-v4.git
 schema:
   file: schema.graphql
 features:
   - ipfsOnEthereumContracts
   - fullTextSearch
-  - grafting
 dataSources:
   - kind: near
     name: receipts
@@ -28,5 +27,6 @@ dataSources:
         - NftTransferPayout
         - NftDecreaseSeriesCopy
         - NftMintBatch
+        - NftTransfer
       receiptHandlers:
         - handler: handleReceipt

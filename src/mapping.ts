@@ -7,6 +7,7 @@ import { NftMint,
   NftOnApprove,
   NftTransferPayout,
   NftDecreaseSeriesCopy,
+  NftTransfer,
   NftMintBatch } from "../generated/schema";
 
 export function handleReceipt(receipt: near.ReceiptWithOutcome): void {
@@ -798,4 +799,101 @@ function handleAction(
   } else {
     log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
   }
+
+  // change the methodName here to the methodName emitting the log in the contract
+  if (functionCall.methodName == "nft_transfer") {
+    const receiptId = receipt.id.toBase58()
+    // Maps the JSON formatted log to the LOG entity
+    let mints = new NftTransfer(`${receiptId}`)
+
+    // Standard receipt properties
+    mints.blockTime = BigInt.fromU64(blockHeader.timestampNanosec/1000000)
+    mints.blockHeight = BigInt.fromU64(blockHeader.height)
+    mints.blockHash = blockHeader.hash.toBase58()
+    mints.predecessorId = receipt.predecessorId
+    mints.receiverId = receipt.receiverId
+    mints.signerId = receipt.signerId
+    mints.signerPublicKey = publicKey.bytes.toBase58()
+    mints.gasBurned = BigInt.fromU64(outcome.gasBurnt)
+    mints.tokensBurned = outcome.tokensBurnt
+    mints.outcomeId = outcome.id.toBase58()
+    mints.executorId = outcome.executorId
+    mints.outcomeBlockHash = outcome.blockHash.toBase58()
+
+    // Log Parsing
+    if(outcome.logs !=null && outcome.logs.length > 0){
+   
+      if(outcome.logs[1].split(':')[0] == 'EVENT_JSON'){
+
+        // this part is required to turn the paras contract EVENT_JSON into valid JSON
+        let delimiter = ':'
+        let parts = outcome.logs[1].split(delimiter)
+        parts[0] = '"EVENT_JSON"'
+        let newString = parts.join(delimiter)
+        let formatString = '{'+newString+'}'
+        let parsed = json.fromString(formatString)
+
+        
+        if(parsed.kind == JSONValueKind.OBJECT){
+          let entry = parsed.toObject()
+
+          //EVENT_JSON
+          let eventJSON = entry.entries[0].value.toObject()
+
+          //standard, version, event (these stay the same for a NEP 171 emmitted log)
+          for(let i = 0; i < eventJSON.entries.length; i++){
+            let key = eventJSON.entries[i].key.toString()
+            switch (true) {
+              case key == 'standard':
+                mints.standard = eventJSON.entries[i].value.toString()
+                break
+              case key == 'event':
+                mints.event = eventJSON.entries[i].value.toString()
+                break
+              case key == 'version':
+                mints.version = eventJSON.entries[i].value.toString()
+                break
+              case key == 'data':
+                let j = 0
+                let dataArray = eventJSON.entries[i].value.toArray()
+                while(j < dataArray.length){
+                  let dataObject = dataArray[j].toObject()
+                  for(let k = 0; k < dataObject.entries.length; k++){
+                    let key = dataObject.entries[k].key.toString()
+                    switch (true) {
+                      case key == 'old_owner_id':
+                        mints.old_owner_id = dataObject.entries[k].value.toString()
+                        break
+                      case key == 'new_owner_id':
+                        mints.new_owner_id = dataObject.entries[k].value.toString()
+                        break
+                      case key == 'token_ids':
+                        let tokenArray = dataObject.entries[k].value.toArray()
+                        let m = 0
+                        while (m < tokenArray.length){
+                          let tokenString = "none"
+                          if(tokenArray[m].toString().length > 0){
+                            tokenString = tokenArray[m].toString()
+                            mints.token_series_id = tokenString.split(':')[0]
+                            mints.token_id = tokenString.split(':')[1]
+                          }
+                          m++
+                        }
+                        break
+                    }
+                  }
+                  j++
+                }
+                break
+            }
+          }
+        }
+        mints.save()
+      }
+    }
+    
+} else {
+  log.info("Not processed - FunctionCall is: {}", [functionCall.methodName]);
+}
+  
 }
